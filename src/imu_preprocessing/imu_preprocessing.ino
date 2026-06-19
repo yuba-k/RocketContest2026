@@ -96,16 +96,19 @@ void setup() {
 void loop() {
   mag.read();
   imu.read();
-  int x_mg = mag.m.x - m_x_offset;
-  int y_mg = mag.m.y - m_y_offset;
-  int z_mg = mag.m.z;
-  int degree = atan2(y_mg,x_mg)*(180/PI);
-  int x_g = imu.g.x - g_x_offset;
-  int y_g = imu.g.y - g_y_offset;
-  int z_g = imu.g.z - g_z_offset;
+  float x_mg = (mag.m.x - m_x_offset)/6842.0f;
+  float y_mg = (mag.m.y - m_y_offset)/6842.0f;
+  float z_mg = mag.m.z/6842.0f;
+  float degree = atan2(y_mg,x_mg)*(180/PI);
+  float x_g = (imu.g.x - g_x_offset)*8.75*0.001;
+  float y_g = (imu.g.y - g_y_offset)*8.75*0.001;
+  float z_g = (imu.g.z - g_z_offset)*8.75*0.001;
+  float x_a = imu.a.x*0.061*0.001;
+  float y_a = imu.a.y*0.061*0.001;
+  float z_a = imu.a.z*0.061*0.001;
 
   //snprintf(report, sizeof(report), "x:%d,y:%d,z:%d,θ:%d\n%d,%d,%d",(int)x_mg,(int)y_mg,mag.m.z,degree,x_g,y_g,z_g);
-  filter.update(x_g, y_g, z_g, imu.a.x, imu.a.y, imu.a.z, x_mg, y_mg, z_mg);
+  filter.update(x_g, y_g, z_g, x_a, y_a, z_a, x_mg, y_mg, z_mg);
   Serial.print("ROLL:");
   Serial.print(filter.getRoll(), 2);
 

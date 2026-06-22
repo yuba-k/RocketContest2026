@@ -5,16 +5,16 @@
 #include <LIS3MDL.h>
 #include <LSM6.h>
 #include <MadgwickAHRS.h>
-#define N 100//キャリブレーションのデータ取得回数
+#define NG 100//ジャイロキャリブレーションのデータ取得回数
+#define NMG 250//地磁気キャリブレーションのデータ取得回数
 #define PI 3.141593
-#define DT 0.1//[s]
+#define DT 0.02//[s]
 
 LIS3MDL mag;
 LSM6 imu;
 Madgwick filter;
 
 char report[80];
-float x_tmp[N], y_tmp[N];//キャリブレーション用仮データ記憶変数
 //地磁気のオフセット
 float m_x_offset = 0.0;
 float m_y_offset = 0.0;
@@ -25,11 +25,11 @@ float g_y_offset = 0.0;
 float g_z_offset = 0.0;
 
 void gyro_calib(){
-  int x_sum = 0;
-  int y_sum = 0;
-  int z_sum = 0;
+  long x_sum = 0;
+  long y_sum = 0;
+  long z_sum = 0;
   digitalWrite(13, HIGH);
-  for(int i = 0; i < N; i++){
+  for(int i = 0; i < NG; i++){
     imu.read();
     x_sum += imu.g.x;
     y_sum += imu.g.y;
@@ -37,9 +37,9 @@ void gyro_calib(){
     delay(DT*1000);
   }
   digitalWrite(13, LOW);
-  g_x_offset = x_sum/N;
-  g_y_offset = y_sum/N;
-  g_z_offset = z_sum/N;
+  g_x_offset = x_sum/NG;
+  g_y_offset = y_sum/NG;
+  g_z_offset = z_sum/NG;
 }
 
 void hard_iron(){
@@ -50,17 +50,13 @@ void hard_iron(){
   int x_min = 32767;
   int y_min = 32767;
   digitalWrite(13, HIGH);
-  for(int i = 0; i < N; i++){
+  for(int i = 0; i < NMG; i++){
     mag.read();
-    x_tmp[i] = mag.m.x;
-    y_tmp[i] = mag.m.y;
+    x_max = max(x_max, mag.m.x);
+    y_max = max(y_max, mag.m.y);
+    x_min = min(x_min, mag.m.x);
+    y_min = min(y_min, mag.m.y);
     delay(DT*1000);
-  }
-  for(int i = 0; i < N; i++){
-    x_max = max(x_max, x_tmp[i]);
-    y_max = max(y_max, y_tmp[i]);
-    x_min = min(x_min, x_tmp[i]);
-    y_min = min(y_min, y_tmp[i]);
   }
   m_x_offset = (x_max+x_min)/2.0;
   m_y_offset = (y_max+y_min)/2.0;
@@ -90,6 +86,12 @@ void setup() {
   }
   imu.enableDefault();
   calibrate();
+  delay(2);
+  for(int i = 0; i <= 10; i++){
+    digitalWrite(13, HIGH);
+    delay(300);
+    digitalWrite(13, LOW);
+  }
   filter.begin(1/DT);
 }
 
@@ -107,7 +109,6 @@ void loop() {
   float y_a = imu.a.y*0.061*0.001;
   float z_a = imu.a.z*0.061*0.001;
 
-  //snprintf(report, sizeof(report), "x:%d,y:%d,z:%d,θ:%d\n%d,%d,%d",(int)x_mg,(int)y_mg,mag.m.z,degree,x_g,y_g,z_g);
   filter.update(x_g, y_g, z_g, x_a, y_a, z_a, x_mg, y_mg, z_mg);
   Serial.print("ROLL:");
   Serial.print(filter.getRoll(), 2);
@@ -116,6 +117,8 @@ void loop() {
   Serial.print(filter.getPitch(), 2);
 
   Serial.print(",YAW:");
-  Serial.println(filter.getYaw(), 2);
+  Serial.print(filter.getYaw(), 2);
+  Serial.print(",DEGREE:");
+  Serial.println(degree);
   delay(DT*1000);
 }

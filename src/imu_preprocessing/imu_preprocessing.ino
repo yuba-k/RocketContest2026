@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <LIS3MDL.h>
 #include <LSM6.h>
-#include <MadgwickAHRS.h>
+#include <Adafruit_AHRS_Madgwick.h>
 #define NG 100//ジャイロキャリブレーションのデータ取得回数
 #define NMG 250//地磁気キャリブレーションのデータ取得回数
 #define PI 3.141593
@@ -12,7 +12,8 @@
 
 LIS3MDL mag;
 LSM6 imu;
-Madgwick filter;
+Adafruit_Madgwick filter(0.3);
+
 
 char report[80];
 //地磁気のオフセット
@@ -23,6 +24,8 @@ float m_z_offset = 0.0;
 float g_x_offset = 0.0;
 float g_y_offset = 0.0;
 float g_z_offset = 0.0;
+
+unsigned long last;
 
 void gyro_calib(){
   long x_sum = 0;
@@ -37,9 +40,9 @@ void gyro_calib(){
     delay(DT*1000);
   }
   digitalWrite(13, LOW);
-  g_x_offset = x_sum/NG;
-  g_y_offset = y_sum/NG;
-  g_z_offset = z_sum/NG;
+  g_x_offset = (float)x_sum/NG;
+  g_y_offset = (float)y_sum/NG;
+  g_z_offset = (float)z_sum/NG;
 }
 
 void hard_iron(){
@@ -92,10 +95,13 @@ void setup() {
     delay(300);
     digitalWrite(13, LOW);
   }
-  filter.begin(1/DT);
+  last = micros();
 }
 
 void loop() {
+  unsigned long now = micros();
+  float dt = (now-last)*1e-6f;
+  last = now;
   mag.read();
   imu.read();
   float x_mg = (mag.m.x - m_x_offset)/6842.0f;
@@ -108,8 +114,7 @@ void loop() {
   float x_a = imu.a.x*0.061*0.001;
   float y_a = imu.a.y*0.061*0.001;
   float z_a = imu.a.z*0.061*0.001;
-
-  filter.update(x_g, y_g, z_g, x_a, y_a, z_a, x_mg, y_mg, z_mg);
+  filter.update(x_g, y_g, z_g, x_a, y_a, z_a, x_mg, y_mg, z_mg, dt);
   Serial.print("ROLL:");
   Serial.print(filter.getRoll(), 2);
 

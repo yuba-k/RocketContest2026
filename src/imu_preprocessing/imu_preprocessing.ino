@@ -20,6 +20,8 @@ char report[80];
 float m_x_offset = 0.0;
 float m_y_offset = 0.0;
 float m_z_offset = 0.0;
+float scale_x =0.0;
+float scale_y =0.0;
 //ジャイロのオフセット
 float g_x_offset = 0.0;
 float g_y_offset = 0.0;
@@ -63,6 +65,13 @@ void hard_iron(){
   }
   m_x_offset = (x_max+x_min)/2.0;
   m_y_offset = (y_max+y_min)/2.0;
+
+  //水平面(x,y)のソフトアイアン補正
+  float range_x = (x_max - x_min)/2;
+  float range_y = (y_max - y_min)/2;
+
+  scale_x = 1 / range_x;
+  scale_y = 1 / range_y;
   digitalWrite(13, LOW);
 }
 
@@ -104,8 +113,8 @@ void loop() {
   last = now;
   mag.read();
   imu.read();
-  float x_mg = (mag.m.x - m_x_offset)/6842.0f;
-  float y_mg = (mag.m.y - m_y_offset)/6842.0f;
+  float x_mg = scale_x*(mag.m.x - m_x_offset)/6842.0f;
+  float y_mg = scale_y*(mag.m.y - m_y_offset)/6842.0f;
   float z_mg = mag.m.z/6842.0f;
   float degree = atan2(y_mg,x_mg)*(180/PI);
   float x_g = (imu.g.x - g_x_offset)*8.75*0.001;

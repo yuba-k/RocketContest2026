@@ -1,7 +1,7 @@
 import serial
 import time
 
-import constants
+from src import constants
 
 class IMUReceiver():
     def __init__(self) -> None:
@@ -19,3 +19,15 @@ class IMUReceiver():
 
     def close(self):
         self.ser.close()
+
+if __name__ == "__main__":
+    print("START")
+    receiver = IMUReceiver()
+    receiver.open()
+    while True:
+        try:
+            print(receiver.getData())
+        except Exception as e:
+            print(e)
+            break
+    receiver.close()

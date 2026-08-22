@@ -19,4 +19,3 @@ class IMUReceiver():
 
     def close(self):
         self.ser.close()
-        KeyboardInterrupt

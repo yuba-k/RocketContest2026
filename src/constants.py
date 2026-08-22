@@ -1,6 +1,6 @@
 from typing import Final
 
-import configloading
+from src import configloading
 
 confload = configloading.Config_reader()
 

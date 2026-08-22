@@ -1,10 +1,13 @@
 import configparser
+import os
 
 class Config_reader:
     def __init__(self):
         try:
+            base = os.path.dirname(os.path.abspath(__file__))
+            ini_path = os.path.join(base, "..", "config", "cansat.ini")
             self.config = configparser.ConfigParser()
-            self.config.read("../config/cansat.ini", encoding="utf-8")
+            self.config.read(ini_path, encoding="utf-8")
         except FileNotFoundError as e:
             print(f"FIleNotFoudError\n{e}")
 

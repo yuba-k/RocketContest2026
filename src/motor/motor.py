@@ -6,9 +6,9 @@ from enum import Enum
 
 import RPi.GPIO as GPIO
 
-import configloading
-import constants
-import pid_controller
+from .. import configloading
+from .. import constants
+from . import pid_controller
 
 logger = logging.getLogger(__name__)
 
@@ -181,8 +181,8 @@ class Motor:
         self.changeFlag = True
         time.sleep(1)
         self.running = False
-        if self.gyroangle is not None:
-            self.gyroangle.stop()
+#        if self.gyroangle is not None:
+#            self.gyroangle.stop()
         GPIO.cleanup()
 
 

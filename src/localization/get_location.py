@@ -29,6 +29,11 @@ class IMUReceiver():
     def get_data(self):
         return self.queue.get()
 
+    def get_yaw(self):
+        data = self.queue.get()
+        yaw = data.split(",")[2]
+        return float(yaw.split(":")[1])
+
     def close(self):
         self.stop_event.set()
         self.th1.join()

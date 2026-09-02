@@ -30,6 +30,7 @@ float g_z_offset = 0.0;
 unsigned long last;
 
 void gyro_calib(){
+  Serial.println("ジャイロキャリブレーション");
   long x_sum = 0;
   long y_sum = 0;
   long z_sum = 0;
@@ -54,6 +55,7 @@ void hard_iron(){
   int y_max = -32768;
   int x_min = 32767;
   int y_min = 32767;
+  Serial.println("地磁気キャリブレーション");
   digitalWrite(13, HIGH);
   for(int i = 0; i < NMG; i++){
     mag.read();
@@ -115,7 +117,7 @@ void loop() {
   imu.read();
   float x_mg = scale_x*(mag.m.x - m_x_offset)/6842.0f;
   float y_mg = scale_y*(mag.m.y - m_y_offset)/6842.0f;
-  float z_mg = mag.m.z/6842.0f;
+  float z_mg = (scale_x+scale_y)/2 * mag.m.z/6842.0f;
   float degree = atan2(y_mg,x_mg)*(180/PI);
   float x_g = (imu.g.x - g_x_offset)*8.75*0.001;
   float y_g = (imu.g.y - g_y_offset)*8.75*0.001;

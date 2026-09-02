@@ -85,7 +85,7 @@ class Motor:
                 self._stop_time = current + sec
         print("time_set")
         while time.monotonic() < self._stop_time:
-            gyrodata = self.gyroangle.get_data()
+            gyrodata = self.gyroangle.get_yaw()
             pidout = self.pid.calc(gyrodata)
             print(gyrodata, pidout)
             self.duty_pair = (self.baseduty - pidout,self.baseduty + pidout)
@@ -164,7 +164,7 @@ class Motor:
                     if sec is not None:
                         self._stop_time = time.monotonic() + sec
                 while time.monotonic() < self._stop_time:
-                    gyrodata = self.gyroangle.get_data()
+                    gyrodata = self.gyroangle.get_yaw()
                     correction = self.pid.calc(pid_controller.wrap_deg(gyrodata))
                     self.duty_pair = (self.baseduty - correction, self.baseduty + correction)
                     self.changeFlag = True

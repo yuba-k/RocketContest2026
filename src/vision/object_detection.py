@@ -14,13 +14,13 @@ from modlib.models.post_processors import pp_od_yolo_ultralytics
 class YOLO(Model):
     def __init__(self):
         super().__init__(
-            model_file="packerOut.zip",
+            model_file="/home/pi/packerOut.zip",
             model_type=MODEL_TYPE.CONVERTED,
             color_format=COLOR_FORMAT.RGB,
             preserve_aspect_ratio=False,
         )
         self.labels = np.genfromtxt(
-            "labels.txt",
+            "/home/pi/labels.txt",
             dtype=str,
             delimiter="\n",
             ndmin=1,
@@ -69,12 +69,15 @@ class Detection():
                     # frame.image はRGB配列なのでBGRに変換してから保存
                     cv2.imwrite(filepath, frame.image)
     def get_angle_distance(self):
-        return self.queue.get()
+        try:
+            return self.queue.get(timeout=1)
+        except queue.Empty:
+            return None
 
 
 if __name__ == "__main__":
     model = Detection()
-    threading.Thread(target=model.detect, daemon=True)
+    threading.Thread(target=model.detect, daemon=True).start()
     while True:
         print(model.get_angle_distance())
         time.sleep(0.1)

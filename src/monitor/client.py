@@ -1,25 +1,30 @@
 import random
+x_pos = 0
+y_pos = 0
 def get_latest_data():
-    #50%の確率でNoneを返す（データが来ない状態）
-    if random.random()<0.5:
+    global x_pos, y_pos
+    if random.random() < 0.5:
         return None
-    #データが来たときは辞書を返す
+    x_pos += random.uniform(-0.5, 0.5)
+    y_pos += random.uniform(-0.5, 0.5)
     return{
         "t":random.uniform(0,30),
         "roll":random.uniform(-5,5),
         "pitch":random.uniform(-5,5),
         "yaw":random.uniform(0,360),
-        "x":random.uniform(-10,10),
-        "y":random.uniform(-10,10),
+        "x":x_pos,
+        "y":y_pos,
         "state":random.choice(["SEARCH","APPROACH","GOAL"]),
         "goal":random.choice([True,False]),
         "color":random.choice(["赤","青","緑",""]),
     }
-
 import tkinter as tk
 import ctypes
 ctypes.windll.shcore.SetProcessDpiAwareness(True)
 root=tk.Tk()
+current_marker = None
+last_px = None
+last_py = None
 root.geometry("1000x650")
 root.title("CanSat状況モニター")
 
@@ -35,106 +40,163 @@ time_label.pack(side="right")
 
 main_frame=tk.Frame(root)
 main_frame.pack(fill="both",expand=True)
-sidebar=tk.Frame(main_frame,width=250)
-sidebar.pack(side="left",fill="y")
-label_title_pose=tk.Label(sidebar,text="姿勢")
-label_title_pose.pack(anchor="w")
-label_roll_title=tk.Label(sidebar,text="Roll:")
-label_roll_title.pack(anchor="w")
-label_pitch_title=tk.Label(sidebar,text="Pitch:")
-label_pitch_title.pack(anchor="w")
-label_yaw_title=tk.Label(sidebar,text="Yaw")
-label_yaw_title.pack(anchor="w")
-label_title_pos=tk.Label(sidebar,text="位置")
-label_title_pos.pack(anchor="w")
-label_x_title=tk.Label(sidebar,text="X:")
-label_x_title.pack(anchor="w")
-label_y_title=tk.Label(sidebar,text="Y:")
-label_y_title.pack(anchor="w")
-roll_value=tk.Label(sidebar,text="=---")
+bottom_frame=tk.Frame(root,height=40)
+bottom_frame.pack(fill="x",side="bottom")
+btn_prev=tk.Button(bottom_frame,text="<< 前へ")
+btn_play=tk.Button(bottom_frame,text="▶ 再生")
+btn_stop=tk.Button(bottom_frame,text="■ 停止")
+btn_next=tk.Button(bottom_frame,text="次へ >>")
+btn_prev.pack(side="left",padx=5)
+btn_play.pack(side="left",padx=5)
+btn_stop.pack(side="left",padx=5)
+btn_next.pack(side="left",padx=5)
+
+info_frame=tk.Frame(main_frame,width=250)
+info_frame.pack(side="right",fill="y")
+info_frame.pack_propagate(False)
+pose_frame=tk.LabelFrame( info_frame, text="姿勢",font=("Arial,18"))
+pose_frame.pack(fill="x", padx=5, pady=5)
+roll_value=tk.Label(pose_frame,text="Roll : ---",font=("Arial,16"))
+pitch_value=tk.Label(pose_frame, text="Pitch : ---",font=("Arial,16"))
+yaw_value=tk.Label(pose_frame,text="Yaw : ---",font=("Arial,16"))
 roll_value.pack(anchor="w")
-pitch_value=tk.Label(sidebar,text="---")
 pitch_value.pack(anchor="w")
-yaw_value=tk.Label(sidebar,text="---")
 yaw_value.pack(anchor="w")
-x_value=tk.Label(sidebar,text="---")
+pos_frame=tk.LabelFrame(info_frame,text="位置",font=("Arial,18"))
+pos_frame.pack(fill="x",padx=5, pady=5)
+x_value=tk.Label(pos_frame,text="X : ---",font=("Arial,16"))
+y_value=tk.Label(pos_frame,text="Y : ---",font=("Arial,16"))
 x_value.pack(anchor="w")
-y_value=tk.Label(sidebar,text="---")
 y_value.pack(anchor="w")
-label_state_title=tk.Label(sidebar,text="状態")
-label_state_title.pack(anchor="w")
-state_value = tk.Label(sidebar, text="---", width=10, bg="lightgray")
-state_value.pack(anchor="w")
-label_goal_title = tk.Label(sidebar, text="ゴール検出",  bg="#f0f0f0")
-label_goal_title.pack(anchor="w")
-goal_value = tk.Label(sidebar, text="---",  width=10, bg="lightgray")
-goal_value.pack(anchor="w")
-label_color_title = tk.Label(sidebar, text="色検出", bg="#f0f0f0")
-label_color_title.pack(anchor="w")
-color_value = tk.Label(sidebar, text="---", width=10, bg="lightgray")
-color_value.pack(anchor="w")
+state_frame=tk.LabelFrame(info_frame,text="探索状態",font=("Arial,18"))
+state_frame.pack(fill="x",padx=5,pady=5)
+state_value=tk.Label(state_frame,text="---",height=2,font=("Arial,16"))
+state_value.pack(fill="x")
+goal_frame=tk.LabelFrame(info_frame,text="ゴール検出",font=("Arial,18"))
+color_frame = tk.LabelFrame(info_frame, text="色検出",font=("Arial,18"))
+color_frame.pack( fill="x",padx=5,pady=5)
+color_value = tk.Label(color_frame, text="---",font=("Arial,16"))
+color_value.pack(fill="x")
+goal_frame.pack(fill="x",padx=5,pady=5)
+goal_value=tk.Label(goal_frame, text="---", height=2,font=("Arial,16"))
+goal_value.pack(fill="x")
+comm_frame=tk.LabelFrame(info_frame,text="通信状況",font=("Arial,18"))
+comm_frame.pack(fill="x",padx=5,pady=5)
+comm_value=tk.Label(comm_frame,text="通信OK",font=("Arial,16"))
+
+comm_value.pack()
+map_area=tk.Canvas(main_frame,width=550, height=570,bg="white")
+map_area.pack(side="left",fill="both",expand=True)
+current_marker = None
+last_px = None
+last_py = None
+CENTER_X = 325
+CENTER_Y = 285
+SCALE = 20
+last_px = None
+last_py = None
 
 
-
-map_area=tk.Canvas(main_frame,width=650,height=570)
-map_area.pack(side="right",fill="both",expand=True)
-
-label_roll=tk.Label(root,text="roll:---")
-label_roll.pack()
-label_pitch=tk.Label(root,text="pitch:---")
-label_pitch.pack()
-label_yaw=tk.Label(root,text="yaw:---")
-label_yaw.pack()
-label_x=tk.Label(root,text="x:---")
-label_x.pack()
-label_y=tk.Label(root,text="y:---")
-label_y.pack()
-label_state=tk.Label(root,text="state:---")
-label_state.pack()
-label_goal=tk.Label(root,text="goal:---")
-label_goal.pack()
-label_color=tk.Label(root,text="color:---")
-label_color.pack()
 
 def update_data():
-    data=get_latest_data()
-    if data is None:
-        root.after(500,update_data)
-        return
-    label_roll.config(text=f"roll:{data['roll']:.2f}")
-    label_pitch.config(text=f"pitch:{data['pitch']:.2f}")
-    label_yaw.config(text=f"yaw:{data['yaw']:.2f}")
-    label_x.config(text=f"x:{data['x']:.2f}")
-    label_y.config(text=f"y:{data}['y']:.2f")
-    label_state.config(text=f"state:{data['state']}")
-    label_goal.config(text=f"goal:{data['goal']}")
-    label_color.config(text=f"color:{data['color']}")
-    root.after(500,update_data)
-    
-    roll_value.config(text=f"{data['roll']:.2f}")
-    pitch_value.config(text=f"{data['pitch']:.2f}")
-    yaw_value.config(text=f"{data['yaw']:.2f}")
+    global current_marker
+    global last_px
+    global last_py
 
-    x_value.config(text=f"{data['x']:.2f}")
-    y_value.config(text=f"{data['y']:.2f}")
+    data = get_latest_data()
+
+    if data is None:
+        root.after(500, update_data)
+        return
+
+    px = CENTER_X + data["x"] * SCALE
+    py = CENTER_Y - data["y"] * SCALE
+
+def update_data():
+    global current_marker
+    global last_px
+    global last_py
+    x_pos = 0
+    y_pos = 0
+    data = get_latest_data()
+
+    if data is None:
+        root.after(500, update_data)
+        return
+
+    px = CENTER_X + data["x"] * SCALE
+    py = CENTER_Y - data["y"] * SCALE
+
+    if last_px is not None:
+        map_area.create_line( last_px, last_py, px, py, fill="black", width=2 )
+    last_px = px
+    last_py = py
+
+    if current_marker is not None:
+        map_area.delete(current_marker)
+
+    current_marker = map_area.create_oval( px - 5, py - 5, px + 5,py + 5, fill="red", outline="black")
+
+    x_value.config(text=f"X : {data['x']:.2f}")
+    y_value.config(text=f"Y : {data['y']:.2f}")
 
     state = data["state"]
+
     if state == "SEARCH":
         state_value.config(text="探索中", bg="lightblue")
     elif state == "APPROACH":
         state_value.config(text="接近中", bg="orange")
     elif state == "GOAL":
-        state_value.config(text="到達！", bg="red")
+        state_value.config(text="到達!", bg="red")
     else:
         state_value.config(text="不明", bg="gray")
 
     if data["goal"]:
-        goal_value.config(text="検出！", bg="red", fg="white")
+        goal_value.config(
+            text="検出!",
+            bg="red",
+            fg="white"
+        )
+    else:
+        goal_value.config(
+            text="---",
+            bg="lightgray",
+            fg="black"
+        )
+
+    if data["color"] == "":
+        color_value.config(text="未検出")
+    else:
+        color_value.config(text=data["color"])
+
+    root.after(1000, update_data)
+
+    if state == "SEARCH":
+        state_value.config(text="探索中", bg="lightblue")
+
+    elif state == "APPROACH":
+        state_value.config(text="接近中", bg="orange")
+
+    elif state == "GOAL":
+        state_value.config(text="到達!", bg="red")
+
+    else:
+        state_value.config(text="不明", bg="gray")
+
+    if data["goal"]:
+        goal_value.config(text="検出!",bg="red",fg="white")
     else:
         goal_value.config(text="---", bg="lightgray", fg="black")
 
-    color_value.config(text=data["color"])
-    root.after(1,update_data)
+    if data["color"] == "":
+        color_value.config(text="未検出")
+    else:
+        color_value.config(text=data["color"])
 
+    root.after(500, update_data)
+
+CENTER_X = 325
+CENTER_Y = 285
+SCALE = 20
 update_data()
 root.mainloop()

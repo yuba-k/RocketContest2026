@@ -2,6 +2,10 @@ import os
 from datetime import datetime
 import cv2
 import numpy as np
+import queue
+import math
+import threading
+import time
 from modlib.apps import Annotator
 from modlib.devices import AiCamera
 from modlib.models import COLOR_FORMAT, MODEL_TYPE, Model
@@ -25,26 +29,52 @@ class YOLO(Model):
     def post_process(self, output_tensors):
         return pp_od_yolo_ultralytics(output_tensors)
 
-# 保存先フォルダを作成
-SAVE_DIR = "detections"
-os.makedirs(SAVE_DIR, exist_ok=True)
+class Detection():
+    def __init__(self):
+        #物体角度と距離格納Queue
+        self.queue = queue.Queue(maxsize=1)
+        # 保存先フォルダを作成
+        self.SAVE_DIR = "detections"
+        os.makedirs(self.SAVE_DIR, exist_ok=True)
 
-device = AiCamera(frame_rate=10)
-model = YOLO()
-device.deploy(model)
-annotator = Annotator()
+        self.device = AiCamera(frame_rate=10)
+        self.model = YOLO()
+        self.device.deploy(self.model)
+        self.annotator = Annotator()
 
-with device as stream:
-    for frame in stream:
-        detections = frame.detections[frame.detections.confidence > 0.55]
+    def detect(self):
+        with self.device as stream:
+            for frame in stream:
+                detections = frame.detections[frame.detections.confidence > 0.55]
 
-        if len(detections) > 0:
-            labels = [f"{model.labels[class_id]}: {score:0.2f}" for _, score, cl                                                                             ass_id, _ in detections]
-            annotator.annotate_boxes(frame, detections, labels=labels, alpha=0.3                                                                             , corner_radius=10)
+                if len(detections) > 0:
+                    labels = [f"{self.model.labels[class_id]}: {score:0.2f}" for _, score, class_id, _ in detections]
+                    bbox = detections.bbox[0]
+                    cx_norm = (bbox[0]+bbox[2])/2
+                    angle = math.degrees(math.atan((cx_norm-0.5)*2*math.tan(math.radians(66)/2)))
+                    apparent_height_corm = bbox[3]-bbox[1]
+                    distance = 0.7/(2*apparent_height_corm*math.tan(math.radians(52.3)/2))
+                    try:
+                        # 古いデータがあれば捨てる
+                        self.queue.get_nowait()
+                    except queue.Empty:
+                        pass
+                    # 最新データを入れる
+                    self.queue.put_nowait({"angle":angle,"distance":distance})
+                    self.annotator.annotate_boxes(frame, detections, labels=labels, alpha=0.3, corner_radius=10)
 
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            filepath = os.path.join(SAVE_DIR, f"{timestamp}.jpg")
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                    filepath = os.path.join(self.SAVE_DIR, f"{timestamp}.jpg")
 
-            # frame.image はRGB配列なのでBGRに変換してから保存
-            cv2.imwrite(filepath, frame.image)#cv2.cvtColor(frame.image, cv2.COL                                                                             OR_RGB2BGR))
-            print(f"Saved: {filepath} ({labels})")
+                    # frame.image はRGB配列なのでBGRに変換してから保存
+                    cv2.imwrite(filepath, frame.image)
+    def get_angle_distance(self):
+        return self.queue.get()
+
+
+if __name__ == "__main__":
+    model = Detection()
+    threading.Thread(target=model.detect, daemon=True)
+    while True:
+        print(model.get_angle_distance())
+        time.sleep(0.1)

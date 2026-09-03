@@ -1,4 +1,4 @@
 test/
 kicad/
 src/**/__pycache__/
-
+src/vision/detections

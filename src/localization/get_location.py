@@ -5,6 +5,10 @@ import threading
 
 from src import constants
 
+class DataMode():
+    FULL = 1
+    YAW = 2
+
 class IMUReceiver():
     def __init__(self) -> None:
         self._port = constants.UART_PORT
@@ -19,20 +23,23 @@ class IMUReceiver():
         self.th1.start()
 
     def update_loop(self):
-        while self.stop_event:
+        while self.stop_event.is_set():
             try:
-                self.queue.put(self.ser.readline().decode(errors="ignore"))
+                self.queue.put_nowait(self.ser.readline().decode(errors="ignore"))
             except queue.Full:
                 pass
             time.sleep(0.01)
 
-    def get_data(self):
-        return self.queue.get()
-
-    def get_yaw(self):
-        data = self.queue.get()
-        yaw = data.split(",")[2]
-        return float(yaw.split(":")[1])
+    def get_data(self, mode):
+        try:
+            if mode == DataMode.FULL:
+                return self.queue.get_nowait()
+            elif mode == DataMode.YAW:
+                data = self.queue.get_nowait()
+                yaw = data.split(",")[2]
+                return float(yaw.split(":")[1])
+        except queue.Empty:
+            pass
 
     def close(self):
         self.stop_event.set()
@@ -45,7 +52,7 @@ if __name__ == "__main__":
     receiver.open()
     while True:
         try:
-            print(receiver.get_data())
+            print(receiver.get_data(DataMode.FULL))
         except Exception as e:
             print(e)
             break

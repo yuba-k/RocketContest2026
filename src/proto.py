@@ -8,6 +8,7 @@ from .motor.motor import ADJUST_DUTY_MODE
 from .localization.get_location import IMUReceiver
 
 imu = IMUReceiver()
+imu.open()
 mv = Motor(imu)
 threading.Thread(target=mv.move, daemon=True).start()
 mv.adjust_duty_cycle(ADJUST_DUTY_MODE.DIRECTION,direction="forward",sec=100)

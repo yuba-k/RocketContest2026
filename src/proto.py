@@ -5,7 +5,7 @@ import threading
 import time
 from .motor.motor import Motor
 from .motor.motor import ADJUST_DUTY_MODE
-from .localization.get_location import IMUReceiver
+from .localization.get_imu import IMUReceiver
 
 imu = IMUReceiver()
 imu.open()

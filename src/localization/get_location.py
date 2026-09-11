@@ -1,60 +1,29 @@
-import serial
+import get_imu
+import wheel_encoder
+import math
 import time
-import queue
-import threading
 
-from src import constants
-
-class DataMode():
-    FULL = 1
-    YAW = 2
-
-class IMUReceiver():
+class Location:
     def __init__(self) -> None:
-        self._port = constants.UART_PORT
-        self._baudrate = constants.BAUDRATE
-        self.queue = queue.Queue(maxsize=1)
-        self.stop_event = threading.Event()
-
-    def open(self):
-        self.ser = serial.Serial(self._port, self._baudrate)
-        self.run = True
-        self.th1 = threading.Thread(target=self.update_loop,daemon=True)
-        self.th1.start()
+        self.x, self.y = 0.0, 0.0
+        self.latest_yaw = 0.0
+        self.imu = get_imu.IMUReceiver()
+        self.imu.open()
+        self.encoder = wheel_encoder.Encoder()
 
     def update_loop(self):
-        while not self.stop_event.is_set():
-            try:
-                self.queue.get_nowait()
-            except queue.Empty:
-                pass
-            self.queue.put_nowait(self.ser.readline().decode(errors="ignore"))
-            time.sleep(0.01)
+        raw_line = self.imu.get_data(get_imu.DataMode.FULL)
+        if raw_line != "None" and raw_line != "Empty":
+            tmp = raw_line.split(",")
+            roll = float(tmp[0].split(":")[1])
+            pitch = float(tmp[1].split(":")[1])
+            yaw = float(tmp[2].split(":")[1])
+            degree = float(tmp[3].split(":")[1])
+            self.latest_yaw = yaw
+        d_left, d_right = self.encoder.get_delta_distance()
+        d = (d_left + d_right)/2
+        yaw_rad = math.radians(self.latest_yaw)
+        self.x += d * math.cos(yaw_rad)
+        self.y += d * math.sin(yaw_rad)
+        time.sleep(0.02)
 
-    def get_data(self, mode):
-        try:
-            if mode == DataMode.FULL:
-                return self.queue.get_nowait()
-            elif mode == DataMode.YAW:
-                data = self.queue.get_nowait()
-                yaw = data.split(",")[2]
-                return float(yaw.split(":")[1])
-        except queue.Empty:
-            pass
-
-    def close(self):
-        self.stop_event.set()
-        self.th1.join()
-        self.ser.close()
-
-if __name__ == "__main__":
-    print("START")
-    receiver = IMUReceiver()
-    receiver.open()
-    while True:
-        try:
-            print(receiver.get_data(DataMode.FULL))
-        except Exception as e:
-            print(e)
-            break
-    receiver.close()

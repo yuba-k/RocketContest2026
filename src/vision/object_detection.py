@@ -49,7 +49,8 @@ class Detection():
 
                 if len(detections) > 0:
                     labels = [f"{self.model.labels[class_id]}: {score:0.2f}" for _, score, class_id, _ in detections]
-                    bbox = detections.bbox[0]
+                    tmp = detections.bbox[0]
+                    bbox = [1-tmp[2],1-tmp[3],1-tmp[0],1-tmp[1],]
                     cx_norm = (bbox[0]+bbox[2])/2
                     angle = math.degrees(math.atan((cx_norm-0.5)*2*math.tan(math.radians(66)/2)))
                     apparent_height_corm = bbox[3]-bbox[1]

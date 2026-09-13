@@ -25,11 +25,12 @@ class IMUReceiver():
 
     def update_loop(self):
         while not self.stop_event.is_set():
+            data = self.ser.readline().decode(errors="ignore")
             try:
                 self.queue.get_nowait()
             except queue.Empty:
                 pass
-            self.queue.put_nowait(self.ser.readline().decode(errors="ignore"))
+            self.queue.put_nowait(data)
             time.sleep(0.01)
 
     def get_data(self, mode) -> str:
@@ -54,13 +55,18 @@ class IMUReceiver():
         self.ser.close()
 
 if __name__ == "__main__":
-    print("START")
-    receiver = IMUReceiver()
-    receiver.open()
-    while True:
-        try:
-            print(receiver.get_data(DataMode.FULL))
-        except Exception as e:
-            print(e)
-            break
-    receiver.close()
+    try:
+        print("START")
+        receiver = IMUReceiver()
+        receiver.open()
+        while True:
+            try:
+                print(receiver.get_data(DataMode.FULL))
+            except Exception as e:
+                print(e)
+                raise KeyboardInterrupt
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        receiver.close()

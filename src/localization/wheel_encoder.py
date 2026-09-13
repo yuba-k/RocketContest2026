@@ -6,12 +6,15 @@ import adafruit_tca9548a
 
 class Encoder():
     def __init__(self):
-        i2c = board.I2C()
-        self._tca = adafruit_tca9548a.TCA9548A(i2c)
-        self._sensor_left = adafruit_as5600.AS5600(self._tca[0])
-        self._sensor_right = adafruit_as5600.AS5600(self._tca[1])
-        self._radius = constants.RADIUS
-        self.reset_base()
+        try:
+            i2c = board.I2C()
+            self._tca = adafruit_tca9548a.TCA9548A(i2c)
+            self._sensor_left = adafruit_as5600.AS5600(self._tca[0])
+            self._sensor_right = adafruit_as5600.AS5600(self._tca[1])
+            self._radius = constants.RADIUS
+            self.reset_base()
+        except Exception:
+            raise Exception("エンコーダの初期化に失敗")
 
     def reset_base(self):
         self._prev_angle_left, self._prev_angle_right = self._get_angle()

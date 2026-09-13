@@ -63,4 +63,5 @@ if __name__ == "__main__":
         except Exception as e:
             print(e)
             break
+        time.sleep(1)
     receiver.close()

@@ -25,11 +25,12 @@ class IMUReceiver():
 
     def update_loop(self):
         while not self.stop_event.is_set():
+            data = self.ser.readline().decode(errors="ignore")
             try:
                 self.queue.get_nowait()
             except queue.Empty:
                 pass
-            self.queue.put_nowait(self.ser.readline().decode(errors="ignore"))
+            self.queue.put_nowait(data)
             time.sleep(0.01)
 
     def get_data(self, mode) -> str:

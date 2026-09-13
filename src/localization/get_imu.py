@@ -55,14 +55,18 @@ class IMUReceiver():
         self.ser.close()
 
 if __name__ == "__main__":
-    print("START")
-    receiver = IMUReceiver()
-    receiver.open()
-    while True:
-        try:
-            print(receiver.get_data(DataMode.FULL))
-        except Exception as e:
-            print(e)
-            break
-        time.sleep(1)
-    receiver.close()
+    try:
+        print("START")
+        receiver = IMUReceiver()
+        receiver.open()
+        while True:
+            try:
+                print(receiver.get_data(DataMode.FULL))
+            except Exception as e:
+                print(e)
+                raise KeyboardInterrupt
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        receiver.close()

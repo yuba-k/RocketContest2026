@@ -6,10 +6,10 @@ import time
 from .motor.motor import Motor
 from .motor.motor import ADJUST_DUTY_MODE
 from .localization.get_imu import IMUReceiver
+from .localization.get_location import Location
 
-imu = IMUReceiver()
-imu.open()
-mv = Motor(imu)
+location = Location()
+mv = Motor(location)
 threading.Thread(target=mv.move, daemon=True).start()
 mv.adjust_duty_cycle(ADJUST_DUTY_MODE.DIRECTION,direction="forward",sec=100)
 end = time.time()+100

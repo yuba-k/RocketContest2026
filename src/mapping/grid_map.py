@@ -1,4 +1,4 @@
-from localization import get_location
+from src.localization import get_location
 
 class Mapping():
     def __init__(self) -> None:

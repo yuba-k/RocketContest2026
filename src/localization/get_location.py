@@ -36,6 +36,9 @@ class Location:
             self.queue.put_nowait(f"{self.x},{self.y},{self.latest_yaw}")
             time.sleep(0.02)
 
+    def get_latest_yaw(self):
+        return self.latest_yaw
+
 def main():
     locate = Location()
     th1 = threading.Thread(target=locate.update_loop, daemon=True)

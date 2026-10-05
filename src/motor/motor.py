@@ -150,14 +150,6 @@ class Motor:
                 count = 0
                 div = target_angle / 90
                 self.rotate_to_angle_pid(target_angle, sec, 5, 3)
-                # if div <= 1:
-                #     self.rotate_to_angle_pid(target_angle, sec, stable_count_threshold = 5,stable_error=3)
-                # else:
-                #     sec1, sec2 = 8, sec-4
-                #     threshold1, threshold2 = 1, 5
-                #     for dis_angle, sec, threshold, err in zip([90,target_angle-90],[sec1,sec2],[threshold1,threshold2],[5,3]):
-                #         print(dis_angle,sec,threshold)
-                #         self.rotate_to_angle_pid(dis_angle, sec, threshold,err)
             elif mode == ADJUST_DUTY_MODE.STRAIGHT:
                 self.pid.reset(setpoint=0) 
                 with self._lock:

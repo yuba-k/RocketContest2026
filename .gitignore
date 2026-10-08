@@ -4,3 +4,4 @@ src/**/__pycache__/
 src/vision/detections
 src/proto.py
 doc/*.docx
+doc/*.xlsx

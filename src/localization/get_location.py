@@ -14,8 +14,14 @@ class Location:
         self.imu.open()
         self.encoder = wheel_encoder.Encoder()
 
+    def loop_start(self):
+        self.isRunning = True
+
+    def loop_stop(self):
+        self.isRunning = False
+
     def update_loop(self):
-        while True:
+        while self.isRunning:
             raw_line = self.imu.get_data(get_imu.DataMode.FULL)
             if raw_line != "None" and raw_line != "Empty":
                 tmp = raw_line.split(",")

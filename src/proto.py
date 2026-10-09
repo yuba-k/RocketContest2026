@@ -9,10 +9,11 @@ from .localization.get_imu import IMUReceiver
 from .localization.get_location import Location
 
 location = Location()
+location.loop_start()
 mv = Motor(location)
 threading.Thread(target=mv.move, daemon=True).start()
 mv.adjust_duty_cycle(ADJUST_DUTY_MODE.DIRECTION,direction="forward",sec=100)
-end = time.time()+100
+end = time.time()+3
 while time.time() < end:
     time.sleep(1)
 mv.cleanup()

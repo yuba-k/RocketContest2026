@@ -1,8 +1,8 @@
 from src.localization import get_location
 
 class Mapping():
-    def __init__(self) -> None:
-        self.location = get_location.Location()
+    def __init__(self, location) -> None:
+        self.location = location
         self.x, self.y, self.yaw = 0.0, 0.0, 0.0
 
     def update_loop(self):

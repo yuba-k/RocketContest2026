@@ -17,4 +17,5 @@ end = time.time()+3
 while time.time() < end:
     time.sleep(1)
 mv.cleanup()
+location.loop_stop()
 

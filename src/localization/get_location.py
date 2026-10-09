@@ -16,6 +16,7 @@ class Location:
 
     def loop_start(self):
         self.isRunning = True
+        threading.Thread(target=self.update_loop, daemon=True).start()
 
     def loop_stop(self):
         self.isRunning = False

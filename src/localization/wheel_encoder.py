@@ -53,3 +53,19 @@ class Encoder():
         distance_right = self._radius * math.radians(delta_angle_right)
 
         return distance_left, distance_right
+
+def main():
+    import time
+    wheelEncoder = Encoder()
+    right, left = 0, 0
+    while True:
+        tmp = wheelEncoder.get_delta_distance()
+        right += tmp[0]
+        left += tmp[1]
+        print(f"{right}°, {left}°")
+        time.sleep(1)
+
+    
+
+if __name__ == "__main__":
+    main()

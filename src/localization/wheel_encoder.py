@@ -20,7 +20,7 @@ class Encoder():
         self._prev_angle_left, self._prev_angle_right = self._get_angle()
 
     def _get_angle(self):
-        return self._sensor_left.angle, self._sensor_right.angle
+        return self._sensor_left.angle * 360 / 4096, self._sensor_right.angle * 360 / 4096
 
     @staticmethod
     def _angle_diff(current, previous):
@@ -58,12 +58,15 @@ def main():
     import time
     wheelEncoder = Encoder()
     right, left = 0, 0
+    cnt = 0
     while True:
         tmp = wheelEncoder.get_delta_distance()
-        right += tmp[0]
-        left += tmp[1]
-        print(f"{right}°, {left}°")
-        time.sleep(1)
+        right += tmp[1]
+        left += tmp[0]
+        if cnt % 25 == 0:
+            print(f"{right}m, {left}m")
+        cnt += 1
+        time.sleep(0.02)
 
     
 

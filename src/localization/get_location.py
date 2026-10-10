@@ -14,6 +14,7 @@ class Location:
         self.imu.open()
         self.encoder = wheel_encoder.Encoder()
         self.isRunning = False
+        self.hisLog = []
 
     def loop_start(self):
         self.isRunning = True
@@ -37,6 +38,7 @@ class Location:
             yaw_rad = math.radians(self.latest_yaw)
             self.x += d * math.cos(yaw_rad)
             self.y += d * math.sin(yaw_rad)
+            self.hisLog.append(f"{tmp},x:{self.x},y:{self.y}")
             try:
                 self.queue.get_nowait()
             except queue.Empty:
@@ -54,10 +56,14 @@ def main():
     th1.start()
     while True:
         try:
-            print(locate.queue.get_nowait())
-        except queue.Empty:
             pass
+        except KeyboardInterrupt:
+            break
         time.sleep(1)
+    with open("list.txt", "w") as f:
+        for item in locate.hisLog:
+            f.write(item + "\n")
+
 
 if __name__ == "__main__":
     main()

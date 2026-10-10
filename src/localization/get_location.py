@@ -50,20 +50,28 @@ class Location:
         return self.latest_yaw
 
 def main():
+    import src.motor.motor as motor
     locate = Location()
     locate.isRunning = True
+    mv = motor.Motor()
     th1 = threading.Thread(target=locate.update_loop, daemon=True)
     th1.start()
-    while True:
-        try:
-            pass
-        except KeyboardInterrupt:
-            break
-        time.sleep(1)
-    with open("list.txt", "w") as f:
-        for item in locate.hisLog:
-            f.write(item + "\n")
-
+    threading.Thread(target=mv.move, daemon=True).start()
+    try:
+        mv.adjust_duty_cycle(motor.ADJUST_DUTY_MODE.DIRECTION, direction="forward", duty=40)
+        while True:
+            try:
+                pass
+            except KeyboardInterrupt:
+                break
+            time.sleep(1)
+        with open("list.txt", "w") as f:
+            for item in locate.hisLog:
+                f.write(item + "\n")
+    except Exception as e:
+        print(e)
+    finally:
+        mv.cleanup()
 
 if __name__ == "__main__":
     main()

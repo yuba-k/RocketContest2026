@@ -61,10 +61,9 @@ def main():
         mv.adjust_duty_cycle(motor.ADJUST_DUTY_MODE.DIRECTION, direction="forward", duty=40)
         while True:
             try:
-                pass
+                time.sleep(1)
             except KeyboardInterrupt:
                 break
-            time.sleep(1)
         with open("list.txt", "w") as f:
             for item in locate.hisLog:
                 f.write(item + "\n")

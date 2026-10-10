@@ -20,7 +20,7 @@ class Encoder():
         self._prev_angle_left, self._prev_angle_right = self._get_angle()
 
     def _get_angle(self):
-        return self._sensor_left.angle * 360 / 4096, self._sensor_right.angle * 360 / 4096
+        return -1 * self._sensor_left.angle * 360 / 4096, self._sensor_right.angle * 360 / 4096
 
     @staticmethod
     def _angle_diff(current, previous):
@@ -56,17 +56,31 @@ class Encoder():
 
 def main():
     import time
+    import threading
+    import src.motor.motor as motor
+
     wheelEncoder = Encoder()
     right, left = 0, 0
     cnt = 0
-    while True:
-        tmp = wheelEncoder.get_delta_distance()
-        right += tmp[1]
-        left += tmp[0]
-        if cnt % 25 == 0:
-            print(f"{right}m, {left}m")
-        cnt += 1
-        time.sleep(0.02)
+    mv = motor.Motor()
+    threading.Thread(target = mv.move, daemon=True).start()
+    try:
+        mv.adjust_duty_cycle(motor.ADJUST_DUTY_MODE.DIRECTION, direction="forward", duty=20)
+        while True:
+            try:
+                tmp = wheelEncoder.get_delta_distance()
+                right += tmp[1]
+                left += tmp[0]
+                if cnt % 25 == 0:
+                    print(f"{right}m, {left}m")
+                cnt += 1
+                time.sleep(0.02)
+            except KeyboardInterrupt:
+                break
+    except Exception as e:
+        print(e)
+    finally:
+        mv.cleanup()
 
     
 

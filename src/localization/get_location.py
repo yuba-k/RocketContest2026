@@ -13,6 +13,7 @@ class Location:
         self.imu = get_imu.IMUReceiver()
         self.imu.open()
         self.encoder = wheel_encoder.Encoder()
+        self.isRunning = False
 
     def loop_start(self):
         self.isRunning = True
@@ -28,7 +29,7 @@ class Location:
                 tmp = raw_line.split(",")
                 roll = float(tmp[0].split(":")[1])
                 pitch = float(tmp[1].split(":")[1])
-                yaw = float(tmp[2].split(":")[1])
+                yaw = 180 + float(tmp[2].split(":")[1])
                 degree = float(tmp[3].split(":")[1])
                 self.latest_yaw = yaw
             d_left, d_right = self.encoder.get_delta_distance()
@@ -48,6 +49,7 @@ class Location:
 
 def main():
     locate = Location()
+    locate.isRunning = True
     th1 = threading.Thread(target=locate.update_loop, daemon=True)
     th1.start()
     while True:
